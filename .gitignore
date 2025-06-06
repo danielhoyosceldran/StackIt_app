@@ -1,0 +1,47 @@
+# Directories to ignore
+/.gradle/
+/.idea/
+/build/
+/captures/
+/local.properties
+
+# Ignore IntelliJ/Android Studio specific files
+*.iml
+*.ipr
+*.iws
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Gradle cache
+.gradle/
+
+# Android specific
+*.apk
+*.ap_ 
+*.dex
+*.class
+
+# Kotlin/Java build output
+/build/
+*/build/
+
+# Caches and logs
+*.log
+
+# Ignore generated files
+.cxx/
+.externalNativeBuild/
+.navigation/
+output.json
+
+# Ignore local keystore files (sensitive)
+*.jks
+*.keystore
+key.properties
+
+# Ignore miscellaneous
+*.swp
+*.swo
