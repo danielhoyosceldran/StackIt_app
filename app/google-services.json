@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "259115845258",
+    "project_id": "stackit-bac7e",
+    "storage_bucket": "stackit-bac7e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:259115845258:android:08f4c4ce0dd991bdb60f73",
+        "android_client_info": {
+          "package_name": "com.example.stackit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJHfUVfsl2f3_RdVUbxPjL3g4zw2qLYPs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
