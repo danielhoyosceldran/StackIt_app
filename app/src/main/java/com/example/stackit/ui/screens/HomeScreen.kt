@@ -47,8 +47,10 @@ import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onLogoutClicked: () -> Unit) {
-    val collections = getPlaceholderCollections();
+fun HomeScreen(onLogoutClicked: () -> Unit,
+               onCreateCollectionClicked: () -> Unit
+) {
+    val collections = getPlaceholderCollections;
     Scaffold(
         topBar = {
             TopAppBar(
@@ -81,9 +83,7 @@ fun HomeScreen(onLogoutClicked: () -> Unit) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { /* todo: Add code to create collection */ },
-            ) {
+            FloatingActionButton(onClick = onCreateCollectionClicked) {
                 Icon(Icons.Filled.Add, contentDescription = "Add")
             }
         }
@@ -178,22 +178,19 @@ fun CollectionCard(collection: Collection) {
 @Composable
 fun HomeScreenPreview() {
     StackitTheme {
-        HomeScreen(onLogoutClicked = {})
+        HomeScreen(onLogoutClicked = {}, onCreateCollectionClicked = {})
     }
 }
 
-fun getPlaceholderCollections(): List<Collection> {
-    return listOf(
-        Collection("1", "Collection 1", "Description 1", emptyList(), "admin", emptyList()),
-        Collection("2", "Collection 2", "Description 2", emptyList(), "admin", emptyList()),
-        Collection("3", "Collection 3", "Description 3", emptyList(), "admin", emptyList()),
-        Collection("4", "Collection 4", "Description 4", emptyList(), "admin", emptyList()),
-        Collection("5", "Collection 5", "Description 5", emptyList(), "admin", emptyList()),
-        Collection("6", "Collection 6", "Description 6", emptyList(), "admin", emptyList()),
-        Collection("7", "Collection 7", "Description 7", emptyList(), "admin", emptyList()),
-        Collection("8", "Collection 8", "Description 8", emptyList(), "admin", emptyList()),
-        Collection("9", "Collection 9", "Description 9", emptyList(), "admin", emptyList()),
-        Collection("10", "Collection 10", "Description 10", emptyList(), "admin", emptyList())
-    )
-
-}
+val getPlaceholderCollections = mutableListOf(
+    Collection("1", "Collection 1", "Description 1", emptyList(), "admin", emptyList()),
+    Collection("2", "Collection 2", "Description 2", emptyList(), "admin", emptyList()),
+    Collection("3", "Collection 3", "Description 3", emptyList(), "admin", emptyList()),
+    Collection("4", "Collection 4", "Description 4", emptyList(), "admin", emptyList()),
+    Collection("5", "Collection 5", "Description 5", emptyList(), "admin", emptyList()),
+    Collection("6", "Collection 6", "Description 6", emptyList(), "admin", emptyList()),
+    Collection("7", "Collection 7", "Description 7", emptyList(), "admin", emptyList()),
+    Collection("8", "Collection 8", "Description 8", emptyList(), "admin", emptyList()),
+    Collection("9", "Collection 9", "Description 9", emptyList(), "admin", emptyList()),
+    Collection("10", "Collection 10", "Description 10", emptyList(), "admin", emptyList())
+)

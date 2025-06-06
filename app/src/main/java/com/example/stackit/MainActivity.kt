@@ -24,6 +24,7 @@ import com.google.firebase.ktx.Firebase
 import com.example.stackit.ui.screens.HomeScreen
 import com.example.stackit.ui.screens.AuthScreen
 import com.example.stackit.ui.screens.CreateProfileScreen
+import com.example.stackit.ui.screens.CreateCollectionScreen
 
 import com.example.stackit.ui.theme.StackitTheme
 
@@ -57,6 +58,7 @@ fun MyNavigationGraph(auth: FirebaseAuth) { // Now accepts FirebaseAuth as a par
     val ROUTE_AUTH = "auth_route"
     val ROUTE_HOME = "home_route"
     val ROUTE_CREATE_PROFILE = "create_profile_route"
+    val ROUTE_CREATE_COLLECTION = "create_collection_route"
 
     // State to track if the user is logged in, initially unknown
     var isLoggedIn by remember { mutableStateOf<Boolean?>(null) }
@@ -107,7 +109,7 @@ fun MyNavigationGraph(auth: FirebaseAuth) { // Now accepts FirebaseAuth as a par
                 onProfileCreated = {
                     navController.navigate(ROUTE_HOME) {
                         popUpTo(ROUTE_CREATE_PROFILE) { inclusive = true }
-                        popUpTo(ROUTE_AUTH) { inclusive = true } // Limpiar también AuthScreen
+                        popUpTo(ROUTE_AUTH) { inclusive = true }
                     }
                 }
             )
@@ -118,6 +120,19 @@ fun MyNavigationGraph(auth: FirebaseAuth) { // Now accepts FirebaseAuth as a par
                 onLogoutClicked = { // Navigate to auth on successful logout
                     navController.navigate(ROUTE_AUTH) {
                         popUpTo(ROUTE_HOME) { inclusive = true } // Clear back stack
+                    }
+                },
+                onCreateCollectionClicked = {
+                    navController.navigate(ROUTE_CREATE_COLLECTION)
+                }
+            )
+        }
+        composable(ROUTE_CREATE_COLLECTION) {
+            CreateCollectionScreen(
+                auth = auth,
+                onCollectionCreated = {
+                    navController.navigate(ROUTE_HOME) {
+                        popUpTo(ROUTE_CREATE_COLLECTION) { inclusive = true }
                     }
                 }
             )
