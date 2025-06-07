@@ -20,7 +20,31 @@ import kotlinx.coroutines.tasks.await
 fun CreateCollectionScreen(auth: FirebaseAuth, onCollectionCreated: () -> Unit) {
 
     var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val firestore: FirebaseFirestore = Firebase.firestore
+
+    var currentUserName by remember { mutableStateOf("Loading...") }
+
+    LaunchedEffect(key1 = Unit) {
+        val currentUser = auth.currentUser
+        val userId = currentUser?.uid
+
+        if (userId != null) {
+            // Intentar recuperar el username del perfil del usuario logueado desde Firestore
+            try {
+                val profileDoc = firestore.collection("user_profiles").document(userId).get().await()
+                currentUserName = profileDoc.getString("username") ?: currentUser.email ?: "Unknown User"
+            } catch (e: Exception) {
+                // Manejar errores al recuperar el username
+                Toast.makeText(context, "Error loading username: ${e.message}", Toast.LENGTH_SHORT).show()
+                currentUserName = "Unknown User" // Fallback al email
+            }
+        } else {
+            currentUserName = "Unknown User (Not Logged In)" // En caso de que no haya usuario autenticado
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -40,9 +64,17 @@ fun CreateCollectionScreen(auth: FirebaseAuth, onCollectionCreated: () -> Unit) 
         )
         Spacer(modifier = Modifier.height(24.dp))
 
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Write a Description") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+
         Button(
             onClick = {
-                getPlaceholderCollections.add(Collection("x", "Collection x", "Description x", emptyList(), "admin", emptyList()))
+                getPlaceholderCollections.add(Collection("x", title, description, emptyList(), currentUserName, emptyList()))
                 onCollectionCreated()
             },
             modifier = Modifier.fillMaxWidth(),

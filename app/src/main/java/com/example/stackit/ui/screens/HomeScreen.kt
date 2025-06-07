@@ -45,6 +45,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onLogoutClicked: () -> Unit,
@@ -154,6 +156,13 @@ fun CollectionCard(collection: Collection) {
                 )
                 Text(
                     text = collection.description,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Start,
+                )
+                Text(
+                    text = collection.admin,
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
                         .fillMaxWidth(),
