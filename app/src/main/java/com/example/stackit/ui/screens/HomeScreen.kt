@@ -132,8 +132,6 @@ data class Collection(
     val items: List<Item> // Assuming Item is another data class you'll define
 )
 
-data class Item(val id: String, val name: String, val description: String) // Example Item data class
-
 @Composable
 fun CollectionCard(collection: Collection, onCollectionClicked: (String) -> Unit) {
     Card(
