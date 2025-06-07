@@ -73,11 +73,19 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                verticalArrangement = Arrangement.Start as Arrangement.Vertical,
+                horizontalAlignment = Alignment.Start
             ) {
-                //val t: Collection? = getPlaceholderCollections.find { it.id == collectionId }
-                Text(text = getPlaceholderCollections.find { it.id == collectionId }?.name ?: "Collection not found")
+                val t: Collection? = getPlaceholderCollections.find { it.id == collectionId }
+                Row {
+                    Text(
+                        text = t?.name ?: "Collection not found",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    IconButton(
+                        onClick = { /* todo: share button */ }
+                    ) { }
+                }
             }
 
         }
