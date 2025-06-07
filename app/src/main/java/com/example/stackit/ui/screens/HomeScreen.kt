@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
@@ -48,7 +49,8 @@ import androidx.compose.ui.text.style.TextAlign
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onLogoutClicked: () -> Unit,
-               onCreateCollectionClicked: () -> Unit
+               onCreateCollectionClicked: () -> Unit,
+               onCollectionClicked: (String) -> Unit
 ) {
     val collections = getPlaceholderCollections;
     Scaffold(
@@ -103,13 +105,15 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                     Text(text = "No collections found")
                 } else {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
                             .padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(collections) { collection ->
-                            CollectionCard(collection)
+                            CollectionCard(collection, onCollectionClicked)
                         }
+                        item { Spacer(modifier = Modifier.height(92.dp)) }
                     }
                 }
             }
@@ -131,14 +135,18 @@ data class Collection(
 data class Item(val id: String, val name: String, val description: String) // Example Item data class
 
 @Composable
-fun CollectionCard(collection: Collection) {
+fun CollectionCard(collection: Collection, onCollectionClicked: (String) -> Unit) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(150.dp),
+        onClick = {
+            val id: String = collection.id
+            onCollectionClicked(id)
+        }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -178,7 +186,7 @@ fun CollectionCard(collection: Collection) {
 @Composable
 fun HomeScreenPreview() {
     StackitTheme {
-        HomeScreen(onLogoutClicked = {}, onCreateCollectionClicked = {})
+        HomeScreen(onLogoutClicked = {}, onCreateCollectionClicked = {}, onCollectionClicked = {})
     }
 }
 
