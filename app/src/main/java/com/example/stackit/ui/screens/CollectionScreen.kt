@@ -37,6 +37,7 @@ import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.material3.TopAppBar
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 import com.example.stackit.ui.theme.StackitTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,14 +84,18 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                verticalArrangement = Arrangement.Start as Arrangement.Vertical,
-                horizontalAlignment = Alignment.Start
             ) {
                 val t: Collection? = getPlaceholderCollections.find { it.id == collectionId }
-                Row {
+                Row (
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
                     Text(
                         text = t?.name ?: "Collection not found",
-                        style = MaterialTheme.typography.titleLarge
+                        fontSize = 30.sp
                     )
                     IconButton(
                         onClick = { /* todo: share button */ }
@@ -101,23 +106,38 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                         )
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = t?.description ?: "Description not found",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 )
-                Row {
+                Row (
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
                     Button(
-                        onClick = { /* todo: Ranking button */ }
+                        onClick = { /* todo: Ranking button */ },
+                        modifier = Modifier
+                            .weight(1f)
                     ) {
                         Text(text = "Ranking")
                     }
 
                     Button(
-                        onClick = { /* todo: Graphics button */ }
+                        onClick = { /* todo: Graphics button */ },
+                        modifier = Modifier
+                            .weight(1f)
                     ) {
                         Text(text = "Graphics")
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
                 if(getPlaceholderItems.isEmpty()) {
                     Text(text = "No collections found")
                 } else {
