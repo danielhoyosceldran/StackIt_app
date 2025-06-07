@@ -60,8 +60,10 @@ fun CreateProfileScreen(auth: FirebaseAuth, onProfileCreated: () -> Unit) {
                     try {
                         val userProfile = hashMapOf(
                             "username" to username,
-                            "email" to auth.currentUser?.email, // Opcional: guardar también el email
-                            "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp() // Marca de tiempo
+                            "email" to auth.currentUser?.email,
+                            "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
+                            "collections" to emptyList<String>(),
+                            "invitations" to emptyList<String>()
                         )
                         // Guardar el perfil en una colección 'user_profiles'
                         // Usamos el UID del usuario como ID del documento

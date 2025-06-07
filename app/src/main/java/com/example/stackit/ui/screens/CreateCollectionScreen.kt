@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -99,10 +100,16 @@ fun CreateCollectionScreen(auth: FirebaseAuth, onCollectionCreated: () -> Unit) 
                             "collaborators" to initialCollaborators
                         )
 
-                        firestore.collection("collections")
+                        val newCollectionDocRef = firestore.collection("collections")
                             .add(newCollectionData)
                             .await()
 
+                        val newCollectionId = newCollectionDocRef.id
+
+                        firestore.collection("user_profiles")
+                            .document(userId) // <-- Usar el UID del usuario actual aquí
+                            .update("collections", FieldValue.arrayUnion(newCollectionId))
+                            .await()
                         Toast.makeText(context, "Collection saved successfully!", Toast.LENGTH_SHORT).show()
 
                         onCollectionCreated()
