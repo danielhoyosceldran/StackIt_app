@@ -14,10 +14,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,6 +43,10 @@ import androidx.compose.ui.unit.dp
 import com.example.stackit.R
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,6 +56,7 @@ import com.example.stackit.ui.theme.StackitTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: () -> Unit) {
+    var contentEditable by remember { mutableStateOf(false) }
     Scaffold (
         topBar = {
             TopAppBar(
@@ -120,14 +128,16 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                     ) {
                         // todo
                         // Mostrar quan es pugui determinar si el currentUser és l'administrador de la col·lecció
-//                        IconButton(
-//                            onClick = { }
-//                        ) {
-//                            Icon(
-//                                Icons.Filled.Edit,
-//                                contentDescription = "Edit"
-//                            )
-//                        }
+                        IconButton(
+                            onClick = { contentEditable = !contentEditable }
+                        ) {
+                            if (contentEditable) Icon(
+                                Icons.Filled.Check,
+                                contentDescription = "Check")
+                            else Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = "Edit")
+                        }
                         IconButton(
                             onClick = { /* todo: share button */ }
                         ) {
@@ -185,7 +195,7 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(getPlaceholderItems) { collectionItem ->
-                            ItemCard(collectionItem)
+                            ItemCard(collectionItem, contentEditable)
                         }
                         item { Spacer(modifier = Modifier.height(92.dp)) }
                     }
@@ -212,7 +222,7 @@ val getPlaceholderItems = mutableListOf(
 )
 
 @Composable
-fun ItemCard(collectionItem: Item) {
+fun ItemCard(collectionItem: Item, contentEditable: Boolean) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -229,11 +239,24 @@ fun ItemCard(collectionItem: Item) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Titol",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Row (
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (contentEditable)
+                    IconButton(onClick = { /* todo: delete item */ }) {
+                        Icon(
+                            Icons.Outlined.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                Text(
+                    text = "Titol",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             Text(
                 text = "0",
                 fontSize = 22.sp

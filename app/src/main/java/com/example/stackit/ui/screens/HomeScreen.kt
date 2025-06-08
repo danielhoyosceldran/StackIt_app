@@ -1,22 +1,17 @@
 package com.example.stackit.ui.screens
 
-import android.R.attr.fontWeight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,9 +36,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,7 +45,7 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                onCreateCollectionClicked: () -> Unit,
                onCollectionClicked: (String) -> Unit
 ) {
-    val collections = getPlaceholderCollections;
+    val placeholderCollections = getPlaceholderCollections;
     Scaffold(
         topBar = {
             TopAppBar(
@@ -101,7 +94,7 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if(collections.isEmpty()) {
+                if(placeholderCollections.isEmpty()) {
                     Text(text = "No collections found")
                 } else {
                     LazyColumn(
@@ -110,7 +103,7 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                             .padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(collections) { collection ->
+                        items(placeholderCollections) { collection ->
                             CollectionCard(collection, onCollectionClicked)
                         }
                         item { Spacer(modifier = Modifier.height(92.dp)) }
