@@ -13,11 +13,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.example.stackit.R
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
@@ -74,6 +79,11 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                     }
                 },
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { /* todo: add button */ }) {
+                Icon(Icons.Filled.Add, contentDescription = "Add")
+            }
         }
     ) { innerPadding ->
         Surface(
@@ -166,7 +176,12 @@ val getPlaceholderItems = mutableListOf(
     Item("2", "Item 2", "Description 2"),
     Item("3", "Item 3", "Description 3"),
     Item("4", "Item 4", "Description 4"),
-    Item("5", "Item 5", "Description 5")
+    Item("5", "Item 5", "Description 5"),
+    Item("6", "Item 6", "Description 6"),
+    Item("7", "Item 7", "Description 7"),
+    Item("8", "Item 8", "Description 8"),
+    Item("9", "Item 9", "Description 9"),
+    Item("10", "Item 10", "Description 10")
 )
 
 @Composable
@@ -177,10 +192,39 @@ fun ItemCard(collectionItem: Item) {
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp),
+            .height(60.dp),
         onClick = { /* todo: handle click */ }
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Row (
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Titol",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "0",
+                fontSize = 22.sp
+            )
+            Row (
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = {},
+
+                ) {
+                    Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Increase")
+                }
+                IconButton(onClick = {}) {
+                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Decrease")
+                }
+            }
         }
     }
 }
