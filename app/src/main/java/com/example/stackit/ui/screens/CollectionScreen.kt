@@ -215,14 +215,14 @@ fun ItemCard(collectionItem: Item) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(onClick = {}) {
+                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Decrease")
+                }
                 IconButton(
                     onClick = {},
 
-                ) {
+                    ) {
                     Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Increase")
-                }
-                IconButton(onClick = {}) {
-                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Decrease")
                 }
             }
         }
