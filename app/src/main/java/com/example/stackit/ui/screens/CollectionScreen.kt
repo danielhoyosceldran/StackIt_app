@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Share
@@ -80,6 +81,11 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                 },
             )
         },
+        // todo
+        // floatting button només s'ha de mostrar en el cas que l'usuari sigui el administrador de la col·lecció
+        // per a fer-ho s'a de recuperar el uID del current user (auth.currentUser?.uId) i recuperar de la BBDD
+        // el username. El codi el podem trobar a les línies 30-47 de (buscar el LaunchedEffect):
+        // https://github.com/danielhoyosceldran/StackIt_app/blob/main/app/src/main/java/com/example/stackit/ui/screens/CreateCollectionScreen.kt
         floatingActionButton = {
             FloatingActionButton(onClick = { /* todo: add button */ }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add")
@@ -107,13 +113,29 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                         text = t?.name ?: "Collection not found",
                         fontSize = 30.sp
                     )
-                    IconButton(
-                        onClick = { /* todo: share button */ }
+
+                    Row (
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Filled.Share,
-                            contentDescription = "Share"
-                        )
+                        // todo
+                        // Mostrar quan es pugui determinar si el currentUser és l'administrador de la col·lecció
+//                        IconButton(
+//                            onClick = { }
+//                        ) {
+//                            Icon(
+//                                Icons.Filled.Edit,
+//                                contentDescription = "Edit"
+//                            )
+//                        }
+                        IconButton(
+                            onClick = { /* todo: share button */ }
+                        ) {
+                            Icon(
+                                Icons.Filled.Share,
+                                contentDescription = "Share"
+                            )
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -125,7 +147,7 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                         .padding(16.dp)
                 )
                 Text(
-                    text = "Administrator: " + t?.admin ?: "Admin not found",
+                    text = ("Administrator: " + (t?.admin ?: "Not found")),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier.padding(start = 16.dp)
                 )
