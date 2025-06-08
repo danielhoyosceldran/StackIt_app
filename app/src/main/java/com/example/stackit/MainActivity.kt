@@ -17,12 +17,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
 import com.example.stackit.ui.screens.HomeScreen
 import com.example.stackit.ui.screens.AuthScreen
+import com.example.stackit.ui.screens.CollectionScreen
 import com.example.stackit.ui.screens.CreateProfileScreen
 import com.example.stackit.ui.screens.CreateCollectionScreen
 
@@ -59,6 +62,14 @@ fun MyNavigationGraph(auth: FirebaseAuth) { // Now accepts FirebaseAuth as a par
     val ROUTE_HOME = "home_route"
     val ROUTE_CREATE_PROFILE = "create_profile_route"
     val ROUTE_CREATE_COLLECTION = "create_collection_route"
+    val ROUTE_COLLECTION = "collection_route"
+
+//    // Afegeix aquesta constant
+//    val COLLECTION_ID_ARG = "colId"
+//
+//    // Modifica la teva ROUTE_COLLECTION per incloure el placeholder de l'argument
+//    val ROUTE_COLLECTION = "collection_route/{$COLLECTION_ID_ARG}"
+
 
     // State to track if the user is logged in, initially unknown
     var isLoggedIn by remember { mutableStateOf<Boolean?>(null) }
@@ -124,7 +135,10 @@ fun MyNavigationGraph(auth: FirebaseAuth) { // Now accepts FirebaseAuth as a par
                 },
                 onCreateCollectionClicked = {
                     navController.navigate(ROUTE_CREATE_COLLECTION)
-                }
+                },
+//                onCollectionClicked = {
+//                    navController.navigate("$ROUTE_COLLECTION/$it")
+//                }
             )
         }
         composable(ROUTE_CREATE_COLLECTION) {
@@ -133,6 +147,24 @@ fun MyNavigationGraph(auth: FirebaseAuth) { // Now accepts FirebaseAuth as a par
                 onCollectionCreated = {
                     navController.navigate(ROUTE_HOME) {
                         popUpTo(ROUTE_CREATE_COLLECTION) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(
+            route = "$ROUTE_COLLECTION/{collectionId}",
+            arguments = listOf(navArgument("collectionId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) {
+            CollectionScreen(
+                auth = auth,
+                collectionId = it.arguments?.getString("collectionId") ?: "", // CollectionId through OnReturnClicked(collectionId)
+                onReturnClicked = {
+                    navController.navigate(ROUTE_HOME) {
+                        popUpTo(ROUTE_COLLECTION) { inclusive = true }
                     }
                 }
             )

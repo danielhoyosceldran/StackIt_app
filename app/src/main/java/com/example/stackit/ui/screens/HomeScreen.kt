@@ -180,7 +180,7 @@ fun CollectionCard(collection: Collection) {
         }
     }
 }
-
+    
 
 
 @Preview(showBackground = true)
