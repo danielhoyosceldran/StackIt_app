@@ -1,19 +1,18 @@
 package com.example.stackit.ui.screens
 
-import android.R.attr.fontWeight
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -44,7 +43,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -58,10 +57,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.app
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 
@@ -72,26 +72,29 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                auth: FirebaseAuth?,
                firestore: FirebaseFirestore? = null
 ) {
+    // Usar la instancia de Firestore pasada, o la real si no se pasa nada (solo en runtime)
+    val actualFirestore: FirebaseFirestore = firestore ?: Firebase.firestore
+    val actualAuth: FirebaseAuth = auth ?: Firebase.auth // Usar la instancia de Auth pasada o la real
 
-    val firestore: FirebaseFirestore = Firebase.firestore
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     val collections = remember { mutableStateListOf<Collection>() }
-    val invitations = remember { mutableStateListOf<Invitation>() }
+    val invitations = remember { mutableStateListOf<Invitation>() } // Lista para las invitaciones
     var isLoadingCollections by remember { mutableStateOf(true) }
+    var isLoadingInvitations by remember { mutableStateOf(true) } // Estado de carga para invitaciones
 
     val currentUserCollectionIds = remember { mutableStateListOf<String>() }
     val currentUserInvitationsIds = remember { mutableStateListOf<String>() }
 
-    var invitationFlag by remember { mutableStateOf(false) }
+    var invitationFlag by remember { mutableStateOf(false) } // Controla qué lista se muestra
 
     LaunchedEffect(key1 = Unit) {
-        val currentUser = auth?.currentUser
+        val currentUser = actualAuth.currentUser // Usar actualAuth
         val userId = currentUser?.uid
         // 1. Escuchar el perfil del usuario actual (para obtener sus IDs de colección)
         if (userId != null) {
-            firestore.collection("user_profiles").document(userId)
+            actualFirestore.collection("user_profiles").document(userId) // Usar actualFirestore
                 .addSnapshotListener { profileSnapshot, e ->
                     if (e != null) {
                         Toast.makeText(
@@ -105,7 +108,6 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                     }
 
                     if (profileSnapshot != null && profileSnapshot.exists()) {
-                        // Obtener la lista de IDs de colecciones del perfil del usuario
                         val ids = profileSnapshot.get("collections") as? List<String> ?: emptyList()
                         val idsInv = profileSnapshot.get("invitations") as? List<String> ?: emptyList()
                         currentUserCollectionIds.clear()
@@ -119,10 +121,10 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                 }
         }
 
-        // 2. Escuchar TODAS las colecciones (filtrado se hará en la UI o en reglas si es necesario)
-        firestore.collection("collections")
+        // 2. Escuchar TODAS las colecciones (filtrado se hará en la UI)
+        actualFirestore.collection("collections") // Usar actualFirestore
             .addSnapshotListener { snapshots, e ->
-                isLoadingCollections = false // La carga inicial ha terminado
+                isLoadingCollections = false // La carga de colecciones ha terminado
 
                 if (e != null) {
                     Toast.makeText(
@@ -147,14 +149,14 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                         }
                     }
                     collections.clear()
-                    // Opcional: ordenar por fecha de creación
                     collections.addAll(newCollections.sortedByDescending { it.createdAt.toDate().time })
                 }
             }
 
-        firestore.collection("invitations")
+        // 3. Escuchar TODAS las invitaciones (filtrado se hará en la UI)
+        actualFirestore.collection("invitations") // Usar actualFirestore
             .addSnapshotListener { snapshots, e ->
-                isLoadingCollections = false
+                isLoadingInvitations = false // La carga de invitaciones ha terminado
 
                 if (e != null) {
                     Toast.makeText(
@@ -206,7 +208,17 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                     }
                 },
                 actions = {
-                    IconButton(onClick = onLogoutClicked) {
+                    IconButton(onClick = {
+                        scope.launch {
+                            try {
+                                actualAuth.signOut() // Usar actualAuth
+                                Toast.makeText(context, "Logged out successfully.", Toast.LENGTH_SHORT).show()
+                                onLogoutClicked()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error logging out: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout",
                             modifier = Modifier.padding(end = 8.dp))
@@ -226,6 +238,7 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                     Button(onClick = {invitationFlag = false}) {
                         Text("Collections")
                     }
+                    Spacer(Modifier.width(8.dp)) // Espacio entre botones
                     Button(onClick = {invitationFlag = true}) {
                         Text("Invitations")
                     }
@@ -249,66 +262,92 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (isLoadingCollections) {
-                    //CircularProgressIndicator(modifier = Modifier.wrapContentSize(Alignment.Center))
+                // Indicador de carga para ambas listas
+                if (isLoadingCollections || isLoadingInvitations) { // Muestra si CUALQUIERA está cargando
+                    CircularProgressIndicator(modifier = Modifier.wrapContentSize(Alignment.Center))
                 } else {
                     val filteredCollections = collections.filter { it.id in currentUserCollectionIds }
                     val filteredInvitations = invitations.filter { it.id in currentUserInvitationsIds }
 
-                    if (!invitationFlag) {
-                        if (filteredCollections.isEmpty()) {
-                            Text(text = "No collections found for you. Start by creating one!")
-                        } else {
-
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize()
-                                    .padding(horizontal = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(filteredCollections) { collection ->
-                                    CollectionCard(
-                                        collection = collection,
-                                        currentUserId = auth?.currentUser?.uid,
-                                        firestore = firestore
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        if (filteredInvitations.isEmpty()) { // Comprueba si las invitaciones están vacías
-                            Text(text = "No invitations found for you.")
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize()
-                                    .padding(horizontal = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(filteredInvitations) { invitation ->
-                                    InvitationCard(
-                                        invitation = invitation,
-                                        currentUserId = auth?.currentUser?.uid,
-                                        firestore = firestore
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    // --- FUNCIÓN REFECTORIZADA PARA MOSTRAR LA LISTA DE COLECCIONES/INVITACIONES ---
+                    DisplayUserItems(
+                        isInvitationFlag = invitationFlag,
+                        collections = filteredCollections,
+                        invitations = filteredInvitations,
+                        currentUserId = actualAuth.currentUser?.uid,
+                        firestore = actualFirestore
+                    )
+                    // -----------------------------------------------------------------------------
                 }
             }
         }
     }
 }
 
+// =================================================================================================
+// FUNCIÓN COMPOSABLE REFECTORIZADA PARA MOSTRAR LA LISTA
+// =================================================================================================
+@Composable
+fun DisplayUserItems(
+    isInvitationFlag: Boolean,
+    collections: List<Collection>,
+    invitations: List<Invitation>,
+    currentUserId: String?,
+    firestore: FirebaseFirestore?
+) {
+    if (!isInvitationFlag) { // Mostrar colecciones
+        if (collections.isEmpty()) {
+            Text(text = "No collections found for you. Start by creating one!")
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(collections) { collection ->
+                    CollectionCard(
+                        collection = collection,
+                        currentUserId = currentUserId,
+                        firestore = firestore
+                    )
+                }
+            }
+        }
+    } else { // Mostrar invitaciones
+        if (invitations.isEmpty()) {
+            Text(text = "No invitations found for you.")
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(invitations) { invitation ->
+                    InvitationCard(
+                        invitation = invitation,
+                        currentUserId = currentUserId,
+                        firestore = firestore
+                    )
+                }
+            }
+        }
+    }
+}
+// =================================================================================================
+
+
+// =================================================================================================
+// DATA CLASSES (Mantengo aquí para que el archivo sea autocontenido para el ejemplo)
+// =================================================================================================
 data class Collection(
     val id: String = "", // Firestore document ID
     val title: String = "",
     val description: String = "",
-    val users: List<String> = emptyList(), // Opcional: si 'users' es para otros tipos de usuarios
-    val creatorUid: String = "", // UID del creador
-    val creatorUsername: String = "", // Username del creador
+    val users: List<String> = emptyList(),
+    val creatorUid: String = "",
+    val creatorUsername: String = "",
     val items: List<Item> = emptyList(),
-    val collaborators: List<String> = emptyList(), // Esta es la lista que queremos actualizar
+    val collaborators: List<String> = emptyList(),
     val createdAt: Timestamp = Timestamp.now()
 )
 
@@ -316,17 +355,20 @@ data class Invitation(
     val id: String = "", // Firestore document ID
     val title: String = "",
     val description: String = "",
-    val users: List<String> = emptyList(), // Opcional: si 'users' es para otros tipos de usuarios
-    val creatorUid: String = "", // UID del creador
-    val creatorUsername: String = "", // Username del creador
+    val users: List<String> = emptyList(),
+    val creatorUid: String = "",
+    val creatorUsername: String = "",
     val items: List<Item> = emptyList(),
-    val collaborators: List<String> = emptyList(), // Esta es la lista que queremos actualizar
+    val collaborators: List<String> = emptyList(),
     val createdAt: Timestamp = Timestamp.now()
 )
 
 
 data class Item(val id: String = "", val name: String = "", val description: String = "")
 
+// =================================================================================================
+// CollectionCard Composable
+// =================================================================================================
 @Composable
 fun CollectionCard(
     collection: Collection,
@@ -343,35 +385,36 @@ fun CollectionCard(
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(IntrinsicSize.Min) // Usar IntrinsicSize.Min para altura flexible
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp) // Padding general para el contenido de la tarjeta
             ) {
                 Text(
-                    text = collection.title,
+                    text = collection.title, // Usar 'title'
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
+                    fontWeight = FontWeight.Bold // Añadido FontWeight.Bold para el título
                 )
                 Text(
                     text = collection.description,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
                 )
                 Text(
-                    text = collection.creatorUsername,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth(),
+                    text = "Creador: ${collection.creatorUsername}", // Usar 'creatorUsername' y añadir etiqueta
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
-            }
+                Spacer(modifier = Modifier.height(8.dp)) // Espacio entre elementos
+                }
+
             IconButton (
                 onClick = { /* TODO: Handle button click */ },
                 modifier = Modifier
@@ -384,6 +427,9 @@ fun CollectionCard(
     }
 }
 
+// =================================================================================================
+// InvitationCard Composable
+// =================================================================================================
 @Composable
 fun InvitationCard(
     invitation: Invitation,
@@ -400,35 +446,54 @@ fun InvitationCard(
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(IntrinsicSize.Min) // Usar IntrinsicSize.Min para altura flexible
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp) // Padding general para el contenido de la tarjeta
             ) {
                 Text(
-                    text = invitation.title,
+                    text = invitation.title, // Usar 'title'
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
+                    fontWeight = FontWeight.Bold // Añadido FontWeight.Bold
                 )
                 Text(
                     text = invitation.description,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
                 )
                 Text(
-                    text = invitation.creatorUsername,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth(),
+                    text = "Invitación de: ${invitation.creatorUsername}", // Usar 'creatorUsername' y añadir etiqueta
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
+                // Puedes añadir botones de Aceptar/Rechazar invitación aquí si quieres.
+                // Lógica de botones de Aceptar/Rechazar invitación (si el currentUserId es el invitado)
+                // Esto es solo un placeholder, la lógica real sería más compleja y debería
+                // modificar el estado de la invitación en Firestore (e.g., status: "accepted").
+                if (currentUserId != null && invitation.collaborators.contains(currentUserId)) { // Asumiendo que 'collaborators' guarda el UID del invitado
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        Button(onClick = { /* TODO: Lógica para Aceptar invitación */ }) {
+                            Text("Aceptar")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = { /* TODO: Lógica para Rechazar invitación */ }) {
+                            Text("Rechazar")
+                        }
+                    }
+                }
             }
+
             IconButton (
                 onClick = { /* TODO: Handle button click */ },
                 modifier = Modifier
@@ -441,40 +506,53 @@ fun InvitationCard(
     }
 }
 
+// =================================================================================================
+// HomeScreenPreview
+// =================================================================================================
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     StackitTheme {
-        // --- CÓDIGO CORREGIDO PARA EL PREVIEW ---
-        // Simplemente pasar 'null' para las instancias de Firebase.
-        // Los LaunchedEffects y operaciones de Firebase no funcionarán en el preview,
-        // por lo que los datos deberán ser simulados.
-
         // Simula la lista de colecciones que se mostrarían en el preview
         val previewCollectionsList = listOf(
-            Collection("1", "Mi Colección Favorita", "Una descripción genial para mi colección.", emptyList(), "uid123", "Creador1", emptyList(), listOf("Collab1", "Collab2")),
-            Collection("2", "Proyectos de Trabajo", "Cosas importantes del trabajo.", emptyList(), "uid456", "Creador2", emptyList(), listOf("CollabA")),
-            Collection("3", "Colección Vacía", "No tiene elementos.", emptyList(), "uid123", "Creador1", emptyList(), emptyList())
+            Collection("1", "Mi Colección Favorita (Preview)", "Descripción de colección 1.", emptyList(), "uid123", "CreadorPreview1", emptyList(), listOf("Collab1", "Collab2")),
+            Collection("2", "Proyectos de Trabajo (Preview)", "Descripción de colección 2.", emptyList(), "uid456", "CreadorPreview2", emptyList(), listOf("CollabA")),
+            Collection("3", "Colección Vacía (Preview)", "Sin elementos.", emptyList(), "uid123", "CreadorPreview1", emptyList(), emptyList())
         )
+        val previewInvitationsList = listOf(
+            Invitation("inv1", "Invitación a la Fiesta (Preview)", "¡Te esperamos!", emptyList(), "hostUid", "Organizador", emptyList(), listOf("someGuestUid")), // Simular un invitado
+            Invitation("inv2", "Invitación a Reunión (Preview)", "Tema: Project X.", emptyList(), "bossUid", "Jefe", emptyList(), emptyList())
+        )
+
 
         Column {
             Text("Preview de HomeScreen: los datos de Firestore NO son en tiempo real.", Modifier.padding(16.dp))
-            Text("Las colecciones mostradas son datos simulados.", Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp))
+            Text("Las colecciones e invitaciones mostradas son datos simulados.", Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp))
 
             // Puedes previsualizar LazyColumn directamente con los datos simulados
             // Para ver cómo se renderiza la lista
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .height(300.dp) // Limitar altura para el preview si es necesario
+                    .height(300.dp) // Limitar altura para el preview
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Muestra colecciones simuladas en el preview
                 items(previewCollectionsList) { collection ->
                     CollectionCard(
                         collection = collection,
                         currentUserId = "uid123", // Simula que el usuario actual es el creador de algunas
                         firestore = null // Pasa null a Firestore en el preview
+                    )
+                }
+                // Si quieres previsualizar las invitaciones en el mismo LazyColumn de preview
+                item { Spacer(Modifier.height(16.dp)) } // Espacio entre colecciones e invitaciones
+                items(previewInvitationsList) { invitation ->
+                    InvitationCard(
+                        invitation = invitation,
+                        currentUserId = "someGuestUid", // Simula que el usuario actual es el invitado
+                        firestore = null
                     )
                 }
             }
@@ -485,8 +563,8 @@ fun HomeScreenPreview() {
             HomeScreen(
                 onLogoutClicked = {},
                 onCreateCollectionClicked = {},
-                auth = null, // Pasa null para FirebaseAuth
-                firestore = null // Pasa null para FirebaseFirestore
+                auth = null,
+                firestore = null
             )
         }
     }
