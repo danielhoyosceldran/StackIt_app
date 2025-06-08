@@ -136,9 +136,9 @@ fun MyNavigationGraph(auth: FirebaseAuth) { // Now accepts FirebaseAuth as a par
                 onCreateCollectionClicked = {
                     navController.navigate(ROUTE_CREATE_COLLECTION)
                 },
-                onCollectionClicked = {
-                    navController.navigate("$ROUTE_COLLECTION/$it")
-                }
+//                onCollectionClicked = {
+//                    navController.navigate("$ROUTE_COLLECTION/$it")
+//                }
             )
         }
         composable(ROUTE_CREATE_COLLECTION) {

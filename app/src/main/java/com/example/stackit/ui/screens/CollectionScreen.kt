@@ -30,6 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -46,17 +48,21 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.example.stackit.ui.theme.StackitTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: () -> Unit) {
     var contentEditable by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     Scaffold (
         topBar = {
             TopAppBar(
@@ -89,13 +95,18 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                 },
             )
         },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        },
         // todo
         // floatting button només s'ha de mostrar en el cas que l'usuari sigui el administrador de la col·lecció
         // per a fer-ho s'a de recuperar el uID del current user (auth.currentUser?.uId) i recuperar de la BBDD
         // el username. El codi el podem trobar a les línies 30-47 de (buscar el LaunchedEffect):
         // https://github.com/danielhoyosceldran/StackIt_app/blob/main/app/src/main/java/com/example/stackit/ui/screens/CreateCollectionScreen.kt
         floatingActionButton = {
-            FloatingActionButton(onClick = { /* todo: add button */ }) {
+            FloatingActionButton(onClick = {
+                // todo fer que s'afegeixin items
+            }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add")
             }
         }
@@ -177,7 +188,11 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                     }
 
                     Button(
-                        onClick = { /* todo: Graphics button */ },
+                        onClick = {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Working on")
+                            }
+                        },
                         modifier = Modifier
                             .weight(1f)
                     ) {
@@ -206,7 +221,7 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
     }
 }
 
-data class Item(val id: String, val name: String, val description: String)
+//data class Item(val id: String, val name: String, val description: String)
 
 val getPlaceholderItems = mutableListOf(
     Item("1", "Item 1", "Description 1"),

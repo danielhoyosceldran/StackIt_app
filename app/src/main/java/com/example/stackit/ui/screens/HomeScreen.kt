@@ -1,17 +1,21 @@
 package com.example.stackit.ui.screens
 
+import android.R.attr.fontWeight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,16 +40,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onLogoutClicked: () -> Unit,
-               onCreateCollectionClicked: () -> Unit,
-               onCollectionClicked: (String) -> Unit
+               onCreateCollectionClicked: () -> Unit
 ) {
-    val placeholderCollections = getPlaceholderCollections;
+    val collections = getPlaceholderCollections;
     Scaffold(
         topBar = {
             TopAppBar(
@@ -94,19 +99,17 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if(placeholderCollections.isEmpty()) {
+                if(collections.isEmpty()) {
                     Text(text = "No collections found")
                 } else {
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
+                        modifier = Modifier.fillMaxSize()
                             .padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(placeholderCollections) { collection ->
-                            CollectionCard(collection, onCollectionClicked)
+                        items(collections) { collection ->
+                            CollectionCard(collection)
                         }
-                        item { Spacer(modifier = Modifier.height(92.dp)) }
                     }
                 }
             }
@@ -125,19 +128,17 @@ data class Collection(
     val items: List<Item> // Assuming Item is another data class you'll define
 )
 
+data class Item(val id: String, val name: String, val description: String) // Example Item data class
+
 @Composable
-fun CollectionCard(collection: Collection, onCollectionClicked: (String) -> Unit) {
+fun CollectionCard(collection: Collection) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp),
-        onClick = {
-            val id: String = collection.id
-            onCollectionClicked(id)
-        }
+            .height(150.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -170,14 +171,14 @@ fun CollectionCard(collection: Collection, onCollectionClicked: (String) -> Unit
         }
     }
 }
-
+    
 
 
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     StackitTheme {
-        HomeScreen(onLogoutClicked = {}, onCreateCollectionClicked = {}, onCollectionClicked = {})
+        HomeScreen(onLogoutClicked = {}, onCreateCollectionClicked = {})
     }
 }
 
