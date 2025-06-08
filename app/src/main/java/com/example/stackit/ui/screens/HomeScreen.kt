@@ -41,9 +41,12 @@ import com.example.stackit.ui.theme.StackitTheme
 import com.example.stackit.R
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -72,29 +75,27 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                auth: FirebaseAuth?,
                firestore: FirebaseFirestore? = null
 ) {
-    // Usar la instancia de Firestore pasada, o la real si no se pasa nada (solo en runtime)
     val actualFirestore: FirebaseFirestore = firestore ?: Firebase.firestore
-    val actualAuth: FirebaseAuth = auth ?: Firebase.auth // Usar la instancia de Auth pasada o la real
+    val actualAuth: FirebaseAuth = auth ?: Firebase.auth
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     val collections = remember { mutableStateListOf<Collection>() }
-    val invitations = remember { mutableStateListOf<Invitation>() } // Lista para las invitaciones
+    val invitations = remember { mutableStateListOf<Invitation>() }
     var isLoadingCollections by remember { mutableStateOf(true) }
-    var isLoadingInvitations by remember { mutableStateOf(true) } // Estado de carga para invitaciones
+    var isLoadingInvitations by remember { mutableStateOf(true) }
 
     val currentUserCollectionIds = remember { mutableStateListOf<String>() }
     val currentUserInvitationsIds = remember { mutableStateListOf<String>() }
 
-    var invitationFlag by remember { mutableStateOf(false) } // Controla qué lista se muestra
+    var invitationFlag by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = Unit) {
-        val currentUser = actualAuth.currentUser // Usar actualAuth
+        val currentUser = actualAuth.currentUser
         val userId = currentUser?.uid
-        // 1. Escuchar el perfil del usuario actual (para obtener sus IDs de colección)
         if (userId != null) {
-            actualFirestore.collection("user_profiles").document(userId) // Usar actualFirestore
+            actualFirestore.collection("user_profiles").document(userId)
                 .addSnapshotListener { profileSnapshot, e ->
                     if (e != null) {
                         Toast.makeText(
@@ -115,16 +116,15 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                         currentUserInvitationsIds.clear()
                         currentUserInvitationsIds.addAll(idsInv)
                     } else {
-                        currentUserCollectionIds.clear() // No hay perfil o está vacío
+                        currentUserCollectionIds.clear()
                         currentUserInvitationsIds.clear()
                     }
                 }
         }
 
-        // 2. Escuchar TODAS las colecciones (filtrado se hará en la UI)
-        actualFirestore.collection("collections") // Usar actualFirestore
+        actualFirestore.collection("collections")
             .addSnapshotListener { snapshots, e ->
-                isLoadingCollections = false // La carga de colecciones ha terminado
+                isLoadingCollections = false
 
                 if (e != null) {
                     Toast.makeText(
@@ -153,10 +153,9 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                 }
             }
 
-        // 3. Escuchar TODAS las invitaciones (filtrado se hará en la UI)
-        actualFirestore.collection("invitations") // Usar actualFirestore
+        actualFirestore.collection("invitations")
             .addSnapshotListener { snapshots, e ->
-                isLoadingInvitations = false // La carga de invitaciones ha terminado
+                isLoadingInvitations = false
 
                 if (e != null) {
                     Toast.makeText(
@@ -211,7 +210,7 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                     IconButton(onClick = {
                         scope.launch {
                             try {
-                                actualAuth.signOut() // Usar actualAuth
+                                actualAuth.signOut()
                                 Toast.makeText(context, "Logged out successfully.", Toast.LENGTH_SHORT).show()
                                 onLogoutClicked()
                             } catch (e: Exception) {
@@ -238,7 +237,7 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                     Button(onClick = {invitationFlag = false}) {
                         Text("Collections")
                     }
-                    Spacer(Modifier.width(8.dp)) // Espacio entre botones
+                    Spacer(Modifier.width(8.dp))
                     Button(onClick = {invitationFlag = true}) {
                         Text("Invitations")
                     }
@@ -262,14 +261,14 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Indicador de carga para ambas listas
-                if (isLoadingCollections || isLoadingInvitations) { // Muestra si CUALQUIERA está cargando
+
+                if (isLoadingCollections || isLoadingInvitations) {
                     CircularProgressIndicator(modifier = Modifier.wrapContentSize(Alignment.Center))
                 } else {
                     val filteredCollections = collections.filter { it.id in currentUserCollectionIds }
                     val filteredInvitations = invitations.filter { it.id in currentUserInvitationsIds }
 
-                    // --- FUNCIÓN REFECTORIZADA PARA MOSTRAR LA LISTA DE COLECCIONES/INVITACIONES ---
+
                     DisplayUserItems(
                         isInvitationFlag = invitationFlag,
                         collections = filteredCollections,
@@ -277,16 +276,12 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                         currentUserId = actualAuth.currentUser?.uid,
                         firestore = actualFirestore
                     )
-                    // -----------------------------------------------------------------------------
                 }
             }
         }
     }
 }
 
-// =================================================================================================
-// FUNCIÓN COMPOSABLE REFECTORIZADA PARA MOSTRAR LA LISTA
-// =================================================================================================
 @Composable
 fun DisplayUserItems(
     isInvitationFlag: Boolean,
@@ -295,7 +290,7 @@ fun DisplayUserItems(
     currentUserId: String?,
     firestore: FirebaseFirestore?
 ) {
-    if (!isInvitationFlag) { // Mostrar colecciones
+    if (!isInvitationFlag) {
         if (collections.isEmpty()) {
             Text(text = "No collections found for you. Start by creating one!")
         } else {
@@ -313,7 +308,7 @@ fun DisplayUserItems(
                 }
             }
         }
-    } else { // Mostrar invitaciones
+    } else {
         if (invitations.isEmpty()) {
             Text(text = "No invitations found for you.")
         } else {
@@ -333,14 +328,8 @@ fun DisplayUserItems(
         }
     }
 }
-// =================================================================================================
-
-
-// =================================================================================================
-// DATA CLASSES (Mantengo aquí para que el archivo sea autocontenido para el ejemplo)
-// =================================================================================================
 data class Collection(
-    val id: String = "", // Firestore document ID
+    val id: String = "",
     val title: String = "",
     val description: String = "",
     val users: List<String> = emptyList(),
@@ -352,7 +341,7 @@ data class Collection(
 )
 
 data class Invitation(
-    val id: String = "", // Firestore document ID
+    val id: String = "",
     val title: String = "",
     val description: String = "",
     val users: List<String> = emptyList(),
@@ -366,9 +355,6 @@ data class Invitation(
 
 data class Item(val id: String = "", val name: String = "", val description: String = "")
 
-// =================================================================================================
-// CollectionCard Composable
-// =================================================================================================
 @Composable
 fun CollectionCard(
     collection: Collection,
@@ -378,6 +364,9 @@ fun CollectionCard(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    var showDialog by remember { mutableStateOf(false) }
+    var enteredText by remember { mutableStateOf("") }
+
     val isCreator = currentUserId != null && currentUserId == collection.creatorUid
     Card(
         colors = CardDefaults.cardColors(
@@ -385,20 +374,20 @@ fun CollectionCard(
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min) // Usar IntrinsicSize.Min para altura flexible
+            .height(IntrinsicSize.Min)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp) // Padding general para el contenido de la tarjeta
+                    .padding(16.dp)
             ) {
                 Text(
-                    text = collection.title, // Usar 'title'
+                    text = collection.title,
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
-                    fontWeight = FontWeight.Bold // Añadido FontWeight.Bold para el título
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = collection.description,
@@ -406,30 +395,51 @@ fun CollectionCard(
                     textAlign = TextAlign.Start,
                 )
                 Text(
-                    text = "Creador: ${collection.creatorUsername}", // Usar 'creatorUsername' y añadir etiqueta
+                    text = "Creador: ${collection.creatorUsername}",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
-                Spacer(modifier = Modifier.height(8.dp)) // Espacio entre elementos
-                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-            IconButton (
-                onClick = { /* TODO: Handle button click */ },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(8.dp),
-            ) {
-                Icon(Icons.Filled.Share, contentDescription = "Share")
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                IconButton(
+                    onClick = {
+                        showDialog = true
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(8.dp)
+                ) {
+                    Icon(Icons.Filled.Share, contentDescription = "Share")
+                }
+            }
+
+            if (showDialog) {
+                SendMessageDialog(
+                    onDismiss = { showDialog = false },
+                    onAccept = {
+                        showDialog = false
+                    },
+                    enteredText = enteredText,
+                    onTextChanged = { newText -> enteredText = newText },
+                    "Invitation",
+                    "Who do you want to send the invitation to?",
+                    "Username of the receiver",
+                    "Send",
+                    "Exit",
+                    collection.id
+
+                )
             }
         }
     }
 }
 
-// =================================================================================================
-// InvitationCard Composable
-// =================================================================================================
+
 @Composable
 fun InvitationCard(
     invitation: Invitation,
@@ -440,26 +450,27 @@ fun InvitationCard(
     val scope = rememberCoroutineScope()
 
     val isCreator = currentUserId != null && currentUserId == invitation.creatorUid
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min) // Usar IntrinsicSize.Min para altura flexible
+            .height(IntrinsicSize.Min)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp) // Padding general para el contenido de la tarjeta
+                    .padding(16.dp)
             ) {
                 Text(
-                    text = invitation.title, // Usar 'title'
+                    text = invitation.title,
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
-                    fontWeight = FontWeight.Bold // Añadido FontWeight.Bold
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = invitation.description,
@@ -467,60 +478,89 @@ fun InvitationCard(
                     textAlign = TextAlign.Start,
                 )
                 Text(
-                    text = "Invitación de: ${invitation.creatorUsername}", // Usar 'creatorUsername' y añadir etiqueta
+                    text = "Invitación de: ${invitation.creatorUsername}",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
-                // Puedes añadir botones de Aceptar/Rechazar invitación aquí si quieres.
-                // Lógica de botones de Aceptar/Rechazar invitación (si el currentUserId es el invitado)
-                // Esto es solo un placeholder, la lógica real sería más compleja y debería
-                // modificar el estado de la invitación en Firestore (e.g., status: "accepted").
-                if (currentUserId != null && invitation.collaborators.contains(currentUserId)) { // Asumiendo que 'collaborators' guarda el UID del invitado
+                if (currentUserId != null && invitation.collaborators.contains(currentUserId)) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        Button(onClick = { /* TODO: Lógica para Aceptar invitación */ }) {
+                        Button(onClick = { }) {
                             Text("Aceptar")
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = { /* TODO: Lógica para Rechazar invitación */ }) {
+                        Button(onClick = { }) {
                             Text("Rechazar")
                         }
                     }
                 }
             }
-
-            IconButton (
-                onClick = { /* TODO: Handle button click */ },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(8.dp),
-            ) {
-                Icon(Icons.Filled.Share, contentDescription = "Share")
-            }
         }
     }
 }
 
-// =================================================================================================
-// HomeScreenPreview
-// =================================================================================================
+@Composable
+fun SendMessageDialog(
+    onDismiss: () -> Unit,
+    onAccept: () -> Unit,
+    enteredText: String,
+    onTextChanged: (String) -> Unit,
+    title: String,
+    question: String,
+    labelText: String,
+    confirmButton: String,
+    dismissButton: String,
+    collectionID: String?
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                Text(question)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = enteredText,
+                    onValueChange = onTextChanged,
+                    label = { Text(labelText) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onAccept) {
+                Text(confirmButton)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(dismissButton)
+            }
+        }
+    )
+}
+
+@Composable
+fun shareInvitation(){
+
+}
+
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     StackitTheme {
-        // Simula la lista de colecciones que se mostrarían en el preview
         val previewCollectionsList = listOf(
             Collection("1", "Mi Colección Favorita (Preview)", "Descripción de colección 1.", emptyList(), "uid123", "CreadorPreview1", emptyList(), listOf("Collab1", "Collab2")),
             Collection("2", "Proyectos de Trabajo (Preview)", "Descripción de colección 2.", emptyList(), "uid456", "CreadorPreview2", emptyList(), listOf("CollabA")),
             Collection("3", "Colección Vacía (Preview)", "Sin elementos.", emptyList(), "uid123", "CreadorPreview1", emptyList(), emptyList())
         )
         val previewInvitationsList = listOf(
-            Invitation("inv1", "Invitación a la Fiesta (Preview)", "¡Te esperamos!", emptyList(), "hostUid", "Organizador", emptyList(), listOf("someGuestUid")), // Simular un invitado
+            Invitation("inv1", "Invitación a la Fiesta (Preview)", "¡Te esperamos!", emptyList(), "hostUid", "Organizador", emptyList(), listOf("someGuestUid")),
             Invitation("inv2", "Invitación a Reunión (Preview)", "Tema: Project X.", emptyList(), "bossUid", "Jefe", emptyList(), emptyList())
         )
 
@@ -529,29 +569,25 @@ fun HomeScreenPreview() {
             Text("Preview de HomeScreen: los datos de Firestore NO son en tiempo real.", Modifier.padding(16.dp))
             Text("Las colecciones e invitaciones mostradas son datos simulados.", Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp))
 
-            // Puedes previsualizar LazyColumn directamente con los datos simulados
-            // Para ver cómo se renderiza la lista
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .height(300.dp) // Limitar altura para el preview
+                    .height(300.dp)
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Muestra colecciones simuladas en el preview
                 items(previewCollectionsList) { collection ->
                     CollectionCard(
                         collection = collection,
-                        currentUserId = "uid123", // Simula que el usuario actual es el creador de algunas
-                        firestore = null // Pasa null a Firestore en el preview
+                        currentUserId = "uid123",
+                        firestore = null
                     )
                 }
-                // Si quieres previsualizar las invitaciones en el mismo LazyColumn de preview
-                item { Spacer(Modifier.height(16.dp)) } // Espacio entre colecciones e invitaciones
+                item { Spacer(Modifier.height(16.dp)) }
                 items(previewInvitationsList) { invitation ->
                     InvitationCard(
                         invitation = invitation,
-                        currentUserId = "someGuestUid", // Simula que el usuario actual es el invitado
+                        currentUserId = "someGuestUid",
                         firestore = null
                     )
                 }
@@ -559,7 +595,6 @@ fun HomeScreenPreview() {
 
             Spacer(Modifier.height(16.dp))
 
-            // Llama a HomeScreen pasando null para las instancias de Firebase
             HomeScreen(
                 onLogoutClicked = {},
                 onCreateCollectionClicked = {},
