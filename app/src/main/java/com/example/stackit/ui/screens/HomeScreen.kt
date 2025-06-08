@@ -29,6 +29,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,9 +78,13 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
     val scope = rememberCoroutineScope()
 
     val collections = remember { mutableStateListOf<Collection>() }
+    val invitations = remember { mutableStateListOf<Invitation>() }
     var isLoadingCollections by remember { mutableStateOf(true) }
 
     val currentUserCollectionIds = remember { mutableStateListOf<String>() }
+    val currentUserInvitationsIds = remember { mutableStateListOf<String>() }
+
+    var invitationFlag by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = Unit) {
         val currentUser = auth?.currentUser
@@ -94,16 +100,21 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                             Toast.LENGTH_LONG
                         ).show()
                         currentUserCollectionIds.clear()
+                        currentUserInvitationsIds.clear()
                         return@addSnapshotListener
                     }
 
                     if (profileSnapshot != null && profileSnapshot.exists()) {
                         // Obtener la lista de IDs de colecciones del perfil del usuario
                         val ids = profileSnapshot.get("collections") as? List<String> ?: emptyList()
+                        val idsInv = profileSnapshot.get("invitations") as? List<String> ?: emptyList()
                         currentUserCollectionIds.clear()
                         currentUserCollectionIds.addAll(ids)
+                        currentUserInvitationsIds.clear()
+                        currentUserInvitationsIds.addAll(idsInv)
                     } else {
                         currentUserCollectionIds.clear() // No hay perfil o está vacío
+                        currentUserInvitationsIds.clear()
                     }
                 }
         }
@@ -141,9 +152,37 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                 }
             }
 
-    }
+        firestore.collection("invitations")
+            .addSnapshotListener { snapshots, e ->
+                isLoadingCollections = false
 
-    //val collections = getPlaceholderCollections;
+                if (e != null) {
+                    Toast.makeText(
+                        context,
+                        "Error listening for invitations: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    invitations.clear()
+                    return@addSnapshotListener
+                }
+
+                if (snapshots != null) {
+                    val newInvitations = mutableListOf<Invitation>()
+                    for (doc in snapshots.documents) {
+                        try {
+                            val invitation = doc.toObject(Invitation::class.java)?.copy(id = doc.id)
+                            if (invitation != null) {
+                                newInvitations.add(invitation)
+                            }
+                        } catch (mappingError: Exception) {
+                            println("Error mapping Firestore document to Invitation: ${mappingError.message}")
+                        }
+                    }
+                    invitations.clear()
+                    invitations.addAll(newInvitations.sortedByDescending { it.createdAt.toDate().time })
+                }
+            }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -175,6 +214,24 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                 }
             )
         },
+        bottomBar = {
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.primary,
+            ) {
+                Row (modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center)
+                {
+                    Button(onClick = {invitationFlag = false}) {
+                        Text("Collections")
+                    }
+                    Button(onClick = {invitationFlag = true}) {
+                        Text("Invitations")
+                    }
+                }
+            }
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onCreateCollectionClicked) {
                 Icon(Icons.Filled.Add, contentDescription = "Add")
@@ -195,24 +252,45 @@ fun HomeScreen(onLogoutClicked: () -> Unit,
                 if (isLoadingCollections) {
                     //CircularProgressIndicator(modifier = Modifier.wrapContentSize(Alignment.Center))
                 } else {
-                    // Filtrar colecciones para mostrar solo las que pertenecen al usuario actual
-                    // Basándonos en la lista de IDs obtenida de user_profiles
                     val filteredCollections = collections.filter { it.id in currentUserCollectionIds }
+                    val filteredInvitations = invitations.filter { it.id in currentUserInvitationsIds }
 
-                    if (filteredCollections.isEmpty()) {
-                        Text(text = "No collections found for you. Start by creating one!")
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(filteredCollections) { collection ->
-                                CollectionCard(
-                                    collection = collection,
-                                    currentUserId = auth?.currentUser?.uid,
-                                    firestore = firestore
-                                )
+                    if (!invitationFlag) {
+                        if (filteredCollections.isEmpty()) {
+                            Text(text = "No collections found for you. Start by creating one!")
+                        } else {
+
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(filteredCollections) { collection ->
+                                    CollectionCard(
+                                        collection = collection,
+                                        currentUserId = auth?.currentUser?.uid,
+                                        firestore = firestore
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        if (filteredInvitations.isEmpty()) { // Comprueba si las invitaciones están vacías
+                            Text(text = "No invitations found for you.")
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(filteredInvitations) { invitation ->
+                                    InvitationCard(
+                                        invitation = invitation,
+                                        currentUserId = auth?.currentUser?.uid,
+                                        firestore = firestore
+                                    )
+                                }
                             }
                         }
                     }
@@ -233,6 +311,19 @@ data class Collection(
     val collaborators: List<String> = emptyList(), // Esta es la lista que queremos actualizar
     val createdAt: Timestamp = Timestamp.now()
 )
+
+data class Invitation(
+    val id: String = "", // Firestore document ID
+    val title: String = "",
+    val description: String = "",
+    val users: List<String> = emptyList(), // Opcional: si 'users' es para otros tipos de usuarios
+    val creatorUid: String = "", // UID del creador
+    val creatorUsername: String = "", // Username del creador
+    val items: List<Item> = emptyList(),
+    val collaborators: List<String> = emptyList(), // Esta es la lista que queremos actualizar
+    val createdAt: Timestamp = Timestamp.now()
+)
+
 
 data class Item(val id: String = "", val name: String = "", val description: String = "")
 
@@ -275,6 +366,63 @@ fun CollectionCard(
                 )
                 Text(
                     text = collection.creatorUsername,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Start,
+                )
+            }
+            IconButton (
+                onClick = { /* TODO: Handle button click */ },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp),
+            ) {
+                Icon(Icons.Filled.Share, contentDescription = "Share")
+            }
+        }
+    }
+}
+
+@Composable
+fun InvitationCard(
+    invitation: Invitation,
+    currentUserId: String?,
+    firestore: FirebaseFirestore?
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val isCreator = currentUserId != null && currentUserId == invitation.creatorUid
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = invitation.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Start,
+                )
+                Text(
+                    text = invitation.description,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Start,
+                )
+                Text(
+                    text = invitation.creatorUsername,
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
                         .fillMaxWidth(),
