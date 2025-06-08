@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.example.stackit.ui.theme.StackitTheme
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,7 +130,7 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                         .padding(horizontal = 16.dp)
                 ) {
                     Text(
-                        text = t?.name ?: "Collection not found",
+                        text = t?.title ?: "Collection not found",
                         fontSize = 30.sp
                     )
 
@@ -168,7 +169,7 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                         .padding(16.dp)
                 )
                 Text(
-                    text = ("Administrator: " + (t?.admin ?: "Not found")),
+                    text = ("Administrator: " + (t?.creatorUsername ?: "Not found")),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier.padding(start = 16.dp)
                 )
@@ -221,7 +222,7 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
     }
 }
 
-//data class Item(val id: String, val name: String, val description: String)
+data class Item(val id: String, val name: String, val description: String)
 
 val getPlaceholderItems = mutableListOf(
     Item("1", "Item 1", "Description 1"),
@@ -234,6 +235,19 @@ val getPlaceholderItems = mutableListOf(
     Item("8", "Item 8", "Description 8"),
     Item("9", "Item 9", "Description 9"),
     Item("10", "Item 10", "Description 10")
+)
+
+val getPlaceholderCollections = mutableListOf(
+    Collection("1", "Collection 1", "Description 1", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now()),
+    Collection("2", "Collection 2", "Description 2", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now()),
+    Collection("3", "Collection 3", "Description 3", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now()),
+    Collection("4", "Collection 4", "Description 4", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now()),
+    Collection("5", "Collection 5", "Description 5", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now()),
+    Collection("6", "Collection 6", "Description 6", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now()),
+    Collection("7", "Collection 7", "Description 7", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now()),
+    Collection("8", "Collection 8", "Description 8", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now()),
+    Collection("9", "Collection 9", "Description 9", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now()),
+    Collection("10", "Collection 10", "Description 10", emptyList(), "adminId", "admin", emptyList(), emptyList(), Timestamp.now())
 )
 
 @Composable

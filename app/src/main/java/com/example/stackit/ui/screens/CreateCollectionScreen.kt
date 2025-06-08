@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -23,6 +24,7 @@ fun CreateCollectionScreen(auth: FirebaseAuth, onCollectionCreated: () -> Unit) 
     var description by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val firestore: FirebaseFirestore = Firebase.firestore
 
     var currentUserName by remember { mutableStateOf("Loading...") }
@@ -32,17 +34,15 @@ fun CreateCollectionScreen(auth: FirebaseAuth, onCollectionCreated: () -> Unit) 
         val userId = currentUser?.uid
 
         if (userId != null) {
-            // Intentar recuperar el username del perfil del usuario logueado desde Firestore
             try {
                 val profileDoc = firestore.collection("user_profiles").document(userId).get().await()
                 currentUserName = profileDoc.getString("username") ?: currentUser.email ?: "Unknown User"
             } catch (e: Exception) {
-                // Manejar errores al recuperar el username
                 Toast.makeText(context, "Error loading username: ${e.message}", Toast.LENGTH_SHORT).show()
-                currentUserName = "Unknown User" // Fallback al email
+                currentUserName = "Unknown User"
             }
         } else {
-            currentUserName = "Unknown User (Not Logged In)" // En caso de que no haya usuario autenticado
+            currentUserName = "Unknown User (Not Logged In)"
         }
     }
 
@@ -74,8 +74,51 @@ fun CreateCollectionScreen(auth: FirebaseAuth, onCollectionCreated: () -> Unit) 
 
         Button(
             onClick = {
-                getPlaceholderCollections.add(Collection("x", title, description, emptyList(), currentUserName, emptyList()))
-                onCollectionCreated()
+                if (title.isEmpty() || description.isEmpty()) {
+                    Toast.makeText(context, "Title and description cannot be empty.", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
+                val userId = auth.currentUser?.uid
+                if (userId == null) {
+                    Toast.makeText(context, "User not logged in. Cannot create collection.", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
+                isLoading = true
+                scope.launch {
+                    try {
+                        val initialCollaborators = listOf(currentUserName)
+
+                        val newCollectionData = hashMapOf(
+                            "title" to title,
+                            "description" to description,
+                            "creatorUid" to userId,
+                            "creatorUsername" to currentUserName,
+                            "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
+                            "items" to emptyList<String>(),
+                            "collaborators" to initialCollaborators
+                        )
+
+                        val newCollectionDocRef = firestore.collection("collections")
+                            .add(newCollectionData)
+                            .await()
+
+                        val newCollectionId = newCollectionDocRef.id
+
+                        firestore.collection("user_profiles")
+                            .document(userId) // <-- Usar el UID del usuario actual aquí
+                            .update("collections", FieldValue.arrayUnion(newCollectionId))
+                            .await()
+                        Toast.makeText(context, "Collection saved successfully!", Toast.LENGTH_SHORT).show()
+
+                        onCollectionCreated()
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Error saving collection: ${e.message}", Toast.LENGTH_LONG).show()
+                    } finally {
+                        isLoading = false
+                    }
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
