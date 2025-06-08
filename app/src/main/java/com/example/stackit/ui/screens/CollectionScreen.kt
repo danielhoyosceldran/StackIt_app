@@ -124,6 +124,11 @@ fun CollectionScreen(auth: FirebaseAuth, collectionId: String, onReturnClicked: 
                         .fillMaxWidth()
                         .padding(16.dp)
                 )
+                Text(
+                    text = "Administrator: " + t?.admin ?: "Admin not found",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(start = 16.dp)
+                )
                 Row (
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
